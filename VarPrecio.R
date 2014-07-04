@@ -45,7 +45,9 @@ Limpia.nombres<-function(df){
   veccolumnas<-gsub("\\.\\.", ".", veccolumnas)
   veccolumnas<-gsub("\\.\\.", ".", veccolumnas)  # para los nombres con tres puntos
   veccolumnas<-gsub("Ã³n", "on", veccolumnas)
-  veccolumnas<-gsub("\\.$", "", veccolumnas) 
+  veccolumnas<-gsub("\\.$", "", veccolumnas)
+  # Se sustituyen espacios 
+  veccolumnas<-gsub(" ","_",veccolumnas)
   
   veccolumnas<-tolower(veccolumnas)   # cambia a minusculas (Google R Style Guide para variables)
   
@@ -81,14 +83,17 @@ col.numericas<-c("importe.de.venta","volumen.bombeo", "volumen.colocacion",
                  "importe.cargos.adicionales","importe.base", 
                  "descuento automatico ( otros descuentos )")
 
-##Se agrega para volver a tener espacios, dado que data.table maneja espacios y no puntos:
-descriptores<-gsub("\\."," ",descriptores)
-col.numericas<-gsub("\\."," ",col.numericas)
+##Se agrega para sustituir puntos y espacios para manejo en data.table:
+descriptores<-gsub("\\.","_",descriptores)
+col.numericas<-gsub("\\.","_",col.numericas)
+descriptores<-gsub(" ","_",descriptores)
+col.numericas<-gsub(" ","_",col.numericas)
 
 #Se cambia a factores las columnas de descriptores, porque data.table las tiene como character
 
 dfMesActual<-dfMesActual[,(descriptores):=lapply(.SD, as.factor),.SDcols=descriptores]
 dfMesPrevio<-dfMesPrevio[,(descriptores):=lapply(.SD, as.factor),.SDcols=descriptores]
+
 
 
 # Variables interesantes, exploración:
@@ -109,12 +114,28 @@ dfMesPrevio<-dfMesPrevio[,(descriptores):=lapply(.SD, as.factor),.SDcols=descrip
 
 table(dfMesActual$grupo) #Mas aglomerado
 table(dfMesActual$tipo) #Aqui viene si es especial sustentable, convencional
-table(dfMesActual$"clasificación articu") # Esta tiene muchos datos sin asignar, mejor Tipo
+table(dfMesActual$"clasificación_articu") # Esta tiene muchos datos sin asignar, mejor Tipo
 table(dfMesActual$producto) #Mas detallado el producto menos aglomerado
-head(dfMesActual$"volumen concreto")
-head(dfMesActual$"importe concreto")
-head(dfMesActual$"descuento automatico ( otros descuentos )")   #A todo le hacen descuento
+head(dfMesActual$"volumen_concreto")
+head(dfMesActual$"importe_concreto")
+head(dfMesActual$"descuento_automatico_(_otros_descuentos_)")   #A todo le hacen descuento
 tables()
+
+
+colnames(dfMesActual)<-gsub(" ","_",colnames(dfMesActual))
+
+
+
+##########
+#función que calcula el $/m3 según los cortes que se le quiera dar en un vector de columnas
+precioporm3<-function (cortes, tabla=dfMesActual)
+{
+  tabla[,sum(importe_concreto,na.rm=TRUE)/sum(volumen_concreto,na.rm=TRUE), by=cortes]
+}
+
+
+
+
 
 # melt
 # dcast.data.table(...)
