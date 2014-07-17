@@ -1,3 +1,46 @@
+
+##################################
+###Conceptualización de la pregunta y el problema
+## Estas comparando dos números, con bases diferentes. lana/m3 vendido en el previo, vs lana/m3 vendido en actual
+## El tema es explicar porque vario de un número a otro.
+## El tema es por producto en el contexto que se defina originalmente (si es por región o por plaza)
+## 1. Mismos productos en misma configuración
+## 2. Mismo producto en una configuración distinta sin efecto
+## 3. Mismo producto en configuración distinta con efecto
+## 4. Producto en previo no encontrado en actual (en ninguna configuración)
+## 5. Producto en actual no encontrado en previo (en ninguna configuración)
+## Cada número es un grupo de productos
+## 
+## para el 1., hay un efecto del volumen aunque sean los mismos productos y configuraciones, los volumenes
+## de cada producto fueron distintos. Suponiendo el escenario siguiente y que no se vendió nada mas:
+## Producto A 10m3 a 100 pesos/m3 (1000 pesos de ingreso); 100m3 a 120 pesos/m3 (12,000 pesos de ingreso)
+## Producto B 100m3 a 200 pesos (20,000 pesos de ingreso); 10m3 a 180 pesos (1800 pesos de ingreso)
+## Previo de 190/m3 vs actual de 125/m3
+## Cuánto de la baja de 190 a 125 es por precio y cuanto es por mezcla?
+## Si volumen hubieran sido constantes, el efecto por precio seria: 10m3 a $120/m3 (1,200 pesos ingreso)
+##                                                                  100m3 a $180/m3 (18,000 pesos ingreso) 
+## Por precio, hubiera bajado solo de 190/m3 a 174/m3, el resto de la baja (de 174 a 125 es mezcla)
+## Por lo tanto el volumen, los productos, y las configuraciones son la mezcla.
+## Si el precio hubiera sido constante, el efecto por volumen sería: 100m3 a $100/m3 (10,000 pesos ingreso)
+#                                                                      10m3 a $200/m3 (2000 pesos ingreso)
+## por volumen hubiera bajado a de 190/m3 a 109/m3, y el precio hubiera tenido un efecto positivo 
+## para llevarlo a 125/m3
+## Producto A +200 por precio, +10800 por mezcla (se fija volumen se multiplican ingresos y se restan para delta)
+## Producto B -2000 por precio, -16200 por mezcla
+## Si solo hubiera variado el precio hubiera bajado de 190 a 174, si solo hubiera variado el volumen
+## hubiera bajado de 190 a 109. Variaron los dos, y quedó en 125
+## No es lineal el tema, por eso no se puede descomponer en sumas?
+## Creo que la mejor opción es no fijar el volumen porque no es controlable por el comercial (en todo caso
+## no es gestión de precio o productividad de precio sino de volumen, en mezcla va demanda más productividad
+## de volumen, no de precio)
+## Entonces sería
+## Producto A +2000 por precio, +9000 por mezcla (se fija precio se multiplican ingresos y se restan para delta)
+## Producto B -200 por precio, -18000 por mezcla
+## Luego ya se suman los efectos de precio, y se dividen por m3 actuales, y luego se suman los efectos
+## De mezcla, y se dividen por m3 actuales, y ya la suma de los dos te da el delta, es decir
+## tienes un delta descompuesto.
+
+
 ## Carga librerias que probablemente se usen
 
 library(ggplot2)
@@ -9,112 +52,7 @@ library(qdap)
 library(gridBase) 
 
 
-## carga datos, asume que archivos estan en "working directory"/Data  y que se ha
-## usado Set Working Directory To source file location
-path.dir <- 'Data'
-
-## nombres de archivos a pasar al analisis
-f.MesActual<-file.path(path.dir,"BO Mayo 14.csv", fsep=.Platform$file.sep)    # MOD
-f.MesPrevio<-file.path(path.dir,"BO Abril 14.csv", fsep=.Platform$file.sep)  # MOD
-
-# NOTA: Archivos extraidos del BO por Desarrollo Comercial
-
-## lectura archivos
-dfMesActual<-fread(f.MesActual)
-dfMesPrevio<-fread(f.MesPrevio)
-
-# se agregó instrucción porque XL trae alunos renglones blancos de mes
-dfMesPrevio<-dfMesPrevio[!dfMesPrevio$Mes=="",]
-dfMesActual<-dfMesActual[!dfMesActual$Mes=="", ]   ## MOD dependiendo del mes
-
-# droplevels(dfMesActual)
-# droplevels(dfMesPrevio)
-
-## funcion para limpiar nombres de columnas, eliminando caracteres extras como "Destin..mcÃ?a..V.Com.."
-
-Limpia.nombres<-function(df){
-  
-  veccolumnas<-colnames(df)
-  
-  veccolumnas<-gsub('Destin.mcÃ?a..V.Com..', '', veccolumnas)
-  veccolumnas<-gsub('Destin\\. mcía\\.\\(V Com\\) ', '', veccolumnas)
-  veccolumnas<-gsub('..DenominaciÃ³n.media.', '', veccolumnas)
-  veccolumnas<-gsub(' \\(Denominación media\\)', '', veccolumnas)
-  veccolumnas<-gsub('Destin.fac..V..Com..', '', veccolumnas)
-  veccolumnas<-gsub('Destin fac \\(V\\. Com\\) ', '', veccolumnas)
-  veccolumnas<-gsub("\\.\\.", ".", veccolumnas)
-  veccolumnas<-gsub("\\.\\.", ".", veccolumnas)  # para los nombres con tres puntos
-  veccolumnas<-gsub("Ã³n", "on", veccolumnas)
-  veccolumnas<-gsub("\\.$", "", veccolumnas) 
-  
-  veccolumnas<-tolower(veccolumnas)   # cambia a minusculas (Google R Style Guide para variables)
-  
-  colnames(df)<-veccolumnas
-  
-  return (df)
-}
-
-# ejecuta funcion y reasigna para tener dos datos frames con los datos a comparar
-# con los nombres de variables identicos y de acuerdo al Google R Style Guide
-
-dfMesActual<-Limpia.nombres(dfMesActual)    
-
-dfMesPrevio<-Limpia.nombres(dfMesPrevio)    
+source("subsetycortes.R")
 
 
-# vectores con nombres de variables de interes
 
-descriptores<-c("region/zona", "gerencia","area.comercial", "mercado.comercial",
-                "centro.clave", "centro", "holding", "destinatario.de.merc",  
-                "solicitante","frente", "vendedor/admys", "vendedor/promotor",
-                "canal","sub.canal", "especialidad", "región (denominación)", 
-                "ciudad", "micromercado", "clasificación articu", "producto",
-                "gpo de materiales (nav)", "tipo.pe", "grupo", "tipo",
-                "material", "identificador.combo","premio.pe",
-                "grupo de clientes (denominación)","cliente.inst", "plaza",
-                "zona") 
-
-col.numericas<-c("importe.de.venta","volumen.bombeo", "volumen.colocacion",
-                 "volumen.concreto", "volumen aditivos, adiciones y fibras",  
-                 "volumen.cargos.adicionales", "importe.bombeo",
-                 "importe colocación", "importe.concreto",
-                 "importe.cargos.adicionales","importe.base", 
-                 "descuento automatico ( otros descuentos )")
-
-##Se agrega para volver a tener espacios, dado que data.table maneja espacios y no puntos:
-descriptores<-gsub("\\."," ",descriptores)
-col.numericas<-gsub("\\."," ",col.numericas)
-
-#Se cambia a factores las columnas de descriptores, porque data.table las tiene como character
-
-dfMesActual<-dfMesActual[,(descriptores):=lapply(.SD, as.factor),.SDcols=descriptores]
-dfMesPrevio<-dfMesPrevio[,(descriptores):=lapply(.SD, as.factor),.SDcols=descriptores]
-
-
-# Variables interesantes, exploración:
-  
-# 
-# Revisar esta sección porque no funciona con data.table
-# explorar.descriptores<-lapply(descriptores, function(column){
-#   aux<-NULL
-#   aux$variable<-column
-#   aux$cant.factores<-nlevels(dfMesActual$column)
-#   aux$factores<-levels(dfMesActual$column)[2:6]
-#   #aux$tabla<-table(dfMesActual[ , column])     # MOD para agregar tabla de frecuencia
-#   return(aux)
-# })
-# 
-# print(explorar.descriptores)
-
-
-table(dfMesActual$grupo) #Mas aglomerado
-table(dfMesActual$tipo) #Aqui viene si es especial sustentable, convencional
-table(dfMesActual$"clasificación articu") # Esta tiene muchos datos sin asignar, mejor Tipo
-table(dfMesActual$producto) #Mas detallado el producto menos aglomerado
-head(dfMesActual$"volumen concreto")
-head(dfMesActual$"importe concreto")
-head(dfMesActual$"descuento automatico ( otros descuentos )")   #A todo le hacen descuento
-tables()
-
-# melt
-# dcast.data.table(...)
