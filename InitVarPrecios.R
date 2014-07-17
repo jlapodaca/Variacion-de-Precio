@@ -15,6 +15,16 @@
 # dfTotal con los datos de ambos meses
 
 
+# Carga librerias
+  library(ggplot2)
+  library(memisc)
+  library(plyr)
+  library(data.table)
+  library(qdap)
+  library(scales)
+  library(gridBase) 
+
+
 
 ## Secuencia para cargar archivos, asume que archivos estan en "working directory"/Data  
 ## y que se ha usado Set Working Directory To source file location
